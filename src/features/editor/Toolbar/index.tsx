@@ -1,20 +1,12 @@
 import React, { useState } from "react";
-import Link from "next/link";
 import { Flex, Group, Select, Button, Text, ButtonProps } from "@mantine/core";
 import styled from "styled-components";
 import toast from "react-hot-toast";
 import { AiOutlineFullscreen } from "react-icons/ai";
-import { FaBolt, FaGithub } from "react-icons/fa6";
-import * as THREE from "three";
-// import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
 import { FileFormat, formats } from "../../../enums/file.enum";
 import { JSONCrackLogo } from "../../../layout/JsonCrackLogo";
 import useFile from "../../../store/useFile";
 import { FileMenu } from "./FileMenu";
-import { RunIcon } from "./RunIcon";
-import { ToolsMenu } from "./ToolsMenu";
-import { ViewMenu } from "./ViewMenu";
-import classes from "./button.module.css";
 import { StyledToolElement } from "./styles";
 
 const StyledTools = styled.div`
@@ -49,9 +41,6 @@ function fullscreenBrowser() {
 export const Toolbar = ({ onButtonClick }) => {
   const setFormat = useFile(state => state.setFormat);
   const format = useFile(state => state.format);
-  const [gltfData, setGltfData] = useState(null); // 用于存储生成的 glTF 数据
-  const fileContents = useFile(state => state.contents); // 获取 JSON 文件内容
-  const handleButtonClick = gltfData => {};
 
   const handleRender = () => {
     try {
