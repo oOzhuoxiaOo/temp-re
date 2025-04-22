@@ -1,0 +1,119 @@
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/router";
+import { useMantineColorScheme } from "@mantine/core";
+import "@mantine/dropzone/styles.css";
+import styled, { ThemeProvider } from "styled-components";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Allotment } from "allotment";
+import "allotment/dist/style.css";
+import { darkTheme, lightTheme } from "../constants/theme";
+import { BottomBar } from "../features/editor/BottomBar";
+import { FullscreenDropzone } from "../features/editor/FullscreenDropzone";
+import { Toolbar } from "../features/editor/Toolbar";
+import useGraph from "../features/editor/views/GraphView/stores/useGraph";
+import useConfig from "../store/useConfig";
+import useFile from "../store/useFile";
+import { useModal } from "../store/useModal";
+
+const ModalController = dynamic(() => import("../features/modals/ModalController"));
+const ExternalMode = dynamic(() => import("../features/editor/ExternalMode"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+    },
+  },
+});
+
+export const StyledPageWrapper = styled.div`
+  height: calc(100vh - 27px);
+  width: 100%;
+
+  @media only screen and (max-width: 320px) {
+    height: 100vh;
+  }
+`;
+
+export const StyledEditorWrapper = styled.div`
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+`;
+
+export const StyledEditor = styled(Allotment)`
+  position: relative !important;
+  display: flex;
+  background: ${({ theme }) => theme.BACKGROUND_SECONDARY};
+  height: calc(100vh - 67px);
+
+  @media only screen and (max-width: 320px) {
+    height: 100vh;
+  }
+`;
+
+const TextEditor = dynamic(() => import("../features/editor/TextEditor"), {
+  ssr: false,
+});
+
+const GLTFViewer = dynamic(() => import("../features/gltf/GLTFViewer"), {
+  ssr: false,
+});
+
+const EditorPage = () => {
+  const { query, isReady } = useRouter();
+  const { setColorScheme } = useMantineColorScheme();
+  const checkEditorSession = useFile(state => state.checkEditorSession);
+  const darkmodeEnabled = useConfig(state => state.darkmodeEnabled);
+  const [gltfCount, setGltfCount] = useState(0);
+  const fullscreen = useGraph(state => state.fullscreen);
+  const testHandle = gltf_t => {
+    console.log("gltf_t", gltf_t);
+    setGltfCount(gltfCount + 1);
+  };
+  useEffect(() => {
+    if (isReady) checkEditorSession(query?.json);
+  }, [checkEditorSession, isReady, query]);
+
+  useEffect(() => {
+    setColorScheme(darkmodeEnabled ? "dark" : "light");
+  }, [darkmodeEnabled, setColorScheme]);
+
+  return (
+    <>
+      <ThemeProvider theme={darkmodeEnabled ? darkTheme : lightTheme}>
+        <QueryClientProvider client={queryClient}>
+          <ExternalMode />
+          <ModalController />
+          <StyledEditorWrapper>
+            <StyledPageWrapper>
+              <Toolbar onButtonClick={testHandle} />
+              <StyledEditorWrapper>
+                <StyledEditor proportionalLayout={false}>
+                  <Allotment.Pane
+                    preferredSize={450}
+                    minSize={fullscreen ? 0 : 300}
+                    maxSize={800}
+                    visible={!fullscreen}
+                  >
+                    <TextEditor />
+                  </Allotment.Pane>
+                  <Allotment.Pane minSize={0}>
+                    {/* <LiveEditor /> */}
+                    <GLTFViewer gltfData={gltfCount} />
+                  </Allotment.Pane>
+                </StyledEditor>
+                <FullscreenDropzone />
+              </StyledEditorWrapper>
+            </StyledPageWrapper>
+            <BottomBar />
+          </StyledEditorWrapper>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </>
+  );
+};
+
+export default EditorPage;
